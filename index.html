@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AX-Archive</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root{
+            --c1:#00f0ff; --c2:#39ff14; --bg:#0a0a12; --card:#11111f;
+        }
+        *{margin:0;padding:0;box-sizing:border-box;cursor:none;}
+        body{
+            background:var(--bg);
+            color:#ccfbff;
+            font-family:'Share Tech Mono',monospace;
+            overflow-x:hidden;
+            min-height:100vh;
+            position:relative;
+        }
+        canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;opacity:0.6;}
+        .grid{
+            position:fixed;top:0;left:0;width:100%;height:100%;
+            background:repeating-linear-gradient(0deg,#0002 0,#0000 2px,transparent 2px,transparent 4px),
+                       repeating-linear-gradient(90deg,#0002 0,#0000 2px,transparent 2px,transparent 4px);
+            pointer-events:none;z-index:2;opacity:0.4;
+            animation:pulseGrid 8s ease-in-out infinite;
+        }
+        .scan{
+            position:fixed;top:0;left:0;width:100%;height:6px;
+            background:linear-gradient(90deg,transparent,var(--c1) 50%,transparent);
+            animation:scan 2.5s linear infinite;
+            box-shadow:0 0 20px var(--c1);
+            z-index:3;
+        }
+
+        /* AURA CURSOR */
+        #aura{
+            position:fixed;
+            width:300px;height:300px;
+            border-radius:50%;
+            pointer-events:none;
+            z-index:9999;
+            transform:translate(-50%,-50%);
+            filter:blur(40px);
+            opacity:0;
+            transition:opacity 0.3s;
+            background:radial-gradient(circle at center, var(--c1) 0%, var(--c2) 50%, transparent 80%);
+            animation:auraPulse 3s ease-in-out infinite;
+            mix-blend-mode:screen;
+        }
+        #aura.active{opacity:0.8;}
+
+        .title{
+            position:relative;z-index:10;
+            text-align:center;
+            padding:6rem 1rem 3rem;
+            font-family:'Orbitron',sans-serif;
+            font-size:clamp(3rem,14vw,8rem);
+            font-weight:900;
+            letter-spacing:8px;
+            background:linear-gradient(90deg,var(--c1),var(--c2),var(--c1));
+            background-size:400%;
+            -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent;
+            animation:glitch 15s linear infinite,levitate 7s ease-in-out infinite;
+            text-shadow:0 0 30px var(--c1);
+        }
+        .title::before,.title::after{
+            content:'AX-Archive';
+            position:absolute;top:0;left:0;right:0;
+            -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent;
+        }
+        .title::before{left:5px; text-shadow:-5px 0 var(--c2); animation:noiseA 0.6s infinite linear alternate-reverse;}
+        .title::after{left:-5px; text-shadow:5px 0 var(--c1); animation:noiseB 0.8s infinite linear alternate-reverse;}
+
+        main{position:relative;z-index:10;max-width:1200px;margin:auto;padding:2rem 1rem;}
+        .card{
+            background:var(--card);
+            border:1px solid #00f0ff33;
+            border-radius:20px;
+            padding:2.8rem;
+            margin:3rem 0;
+            position:relative;
+            overflow:hidden;
+            backdrop-filter:blur(10px);
+            box-shadow:0 0 50px #00f0ff22;
+            transition:0.8s cubic-bezier(0.2,0.8,0.2,1);
+        }
+        .card:hover{
+            transform:translateY(-25px) rotateX(5deg);
+            box-shadow:0 0 120px #39ff1433;
+        }
+        .card::before{
+            content:'';position:absolute;
+            inset:-5px;
+            background:conic-gradient(from 0deg,var(--c1),var(--c2),var(--c1));
+            border-radius:20px;
+            z-index:-1;
+            opacity:0;
+            animation:spin 12s linear infinite;
+            transition:0.8s;
+        }
+        .card:hover::before{opacity:0.8;}
+        .card h2{
+            font-family:'Orbitron',sans-serif;
+            font-size:2.6rem;
+            background:linear-gradient(90deg,var(--c1),var(--c2));
+            -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent;
+            margin-bottom:1.2rem;
+        }
+        .team{
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+            gap:2rem;
+            margin-top:2rem;
+        }
+        .member{
+            background:#0f0f1f;
+            padding:2rem;
+            border-radius:16px;
+            text-align:center;
+            border:2px dashed var(--c1);
+            transition:0.6s;
+            animation:floatMember 6s ease-in-out infinite;
+        }
+        .member:nth-child(2){animation-delay:2s;}
+        .member:hover{
+            border-style:solid;
+            background:#39ff140a;
+            transform:scale(1.12) translateY(-10px);
+        }
+        .music{
+            position:fixed;
+            bottom:25px;right:25px;
+            width:400px;
+            border:4px solid;
+            border-image:linear-gradient(45deg,var(--c1),var(--c2)) 1;
+            border-radius:24px;
+            overflow:hidden;
+            box-shadow:0 0 60px var(--c1);
+            z-index:999;
+            animation:playerPulse 4s ease-in-out infinite;
+        }
+        footer{
+            text-align:center;
+            padding:4rem 1rem 2rem;
+            color:#39ff1488;
+            font-size:1rem;
+            letter-spacing:3px;
+            text-shadow:0 0 15px var(--c2);
+            z-index:10;
+        }
+
+        @keyframes glitch{0%,100%{background-position:0%}50%{background-position:100%}}
+        @keyframes noiseA{0%,100%{clip:rect(0,9999px,40px,0)}50%{clip:rect(80px,9999px,120px,0)}}
+        @keyframes noiseB{0%,100%{clip:rect(20px,9999px,60px,0)}50%{clip:rect(10px,9999px,100px,0)}}
+        @keyframes levitate{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
+        @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+        @keyframes scan{0%{transform:translateY(-100px)}100%{transform:translateY(120vh)}}
+        @keyframes pulseGrid{0%,100%{opacity:0.4}50%{opacity:0.6}}
+        @keyframes floatMember{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+        @keyframes playerPulse{0%,100%{box-shadow:0 0 60px var(--c1)}50%{box-shadow:0 0 100px var(--c2)}}
+        @keyframes auraPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
+        
+        @media(max-width:768px){
+            .music{width:100%;right:0;bottom:0;border-radius:0;}
+            #aura{width:200px;height:200px;filter:blur(30px);}
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="particles"></canvas>
+<div class="grid"></div>
+<div class="scan"></div>
+
+<!-- AURA NEON -->
+<div id="aura"></div>
+
+<header>
+    <div class="title">2025</div>
+</header>
+
+<main>
+    <div class="card">
+        <h2>LEGENDARY TEAMS</h2>
+        <div class="team">
+            <div class="member">
+                <h3>TheMugenKing</h3>
+                <p>A Developer Script In 2024<br>Showcased by He_flash</p>
+            </div>
+            <div class="member">
+                <h3>ArceusXArchive</h3>
+                <p>A Developer Script In 2025-2026<br>“Learn from mistakes”</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>100% SAFE SCRIPT</h2>
+        <p style="font-size:1.3rem;line-height:1.8;">
+            No viruses • No webhooks • No data leaks<br>
+            We literally <u>cannot</u> see your username.
+        </p>
+        <p style="color:#39ff14;margin-top:1rem;font-weight:bold;">
+            Cleanest hub
+        </p>
+    </div>
+
+    <div class="card">
+        <h2>WHY PRIVATE?</h2>
+        <p style="line-height:1.8;">
+            7.8M views ScriptBlox • 8.8M views RScript<br>
+            Zero interest in “Verified” badges.
+        </p>
+        <p style="font-style:italic;color:#00f0ff;margin-top:1rem;">
+            We build for the shadows, not the spotlight.
+        </p>
+    </div>
+</main>
+
+<div class="music">
+    <iframe src="https://www.youtube.com/embed/5x57IpwMrWQ?autoplay=1&loop=1&playlist=5x57IpwMrWQ&controls=1&modestbranding=1&rel=0"
+        allow="autoplay" frameborder="0"></iframe>
+</div>
+
+<footer>© 2025 ArceusxArchive</footer>
+
+<script>
+    // PARTICLES
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    canvas.width = innerWidth; canvas.height = innerHeight;
+    const particles = [];
+    class Particle{
+        constructor(){
+            this.x = Math.random()*canvas.width;
+            this.y = Math.random()*canvas.height;
+            this.size = Math.random()*2+0.5;
+            this.speedX = Math.random()*1-0.5;
+            this.speedY = Math.random()*1-0.5;
+            this.color = Math.random()<0.5?'#00f0ff':'#39ff14';
+        }
+        update(){this.x += this.speedX; this.y += this.speedY;
+            if(this.x<0||this.x>canvas.width) this.speedX*=-1;
+            if(this.y<0||this.y>canvas.height) this.speedY*=-1;
+        }
+        draw(){
+            ctx.fillStyle = this.color;
+            ctx.shadowBlur = 10; ctx.shadowColor = this.color;
+            ctx.beginPath(); ctx.arc(this.x,this.y,this.size,0,Math.PI*2); ctx.fill();
+        }
+    }
+    for(let i=0;i<120;i++) particles.push(new Particle());
+    function animate(){
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        particles.forEach(p=>{p.update();p.draw();});
+        requestAnimationFrame(animate);
+    }
+    animate();
+    window.addEventListener('resize',()=>{canvas.width=innerWidth;canvas.height=innerHeight;});
+
+    // AURA FOLLOW MOUSE + RANDOM DRIFT
+    const aura = document.getElementById('aura');
+    let mouseX = 0, mouseY = 0;
+    let auraX = 0, auraY = 0;
+    let driftX = 0, driftY = 0;
+
+    document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        aura.classList.add('active');
+    });
+
+    function updateAura() {
+        // Random drift
+        driftX += (Math.random() - 0.5) * 8;
+        driftY += (Math.random() - 0.5) * 8;
+        driftX *= 0.95; driftY *= 0.95;
+
+        // Smooth follow
+        auraX += (mouseX + driftX - auraX) * 0.1;
+        auraY += (mouseY + driftY - auraY) * 0.1;
+
+        aura.style.left = auraX + 'px';
+        aura.style.top = auraY + 'px';
+
+        requestAnimationFrame(updateAura);
+    }
+    updateAura();
+
+    // Hide cursor
+    document.body.style.cursor = 'none';
+</script>
+
+</body>
+</html>
